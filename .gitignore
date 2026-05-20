@@ -1,0 +1,29 @@
+# Composer
+vendor/
+composer.lock
+
+# Node
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build artifacts
+*.zip
+*.tar.gz
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# PHP tools
+.phpcs-cache
+.phpunit.result.cache
+
+# Logs
+*.log
