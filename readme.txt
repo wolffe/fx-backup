@@ -1,14 +1,17 @@
 === FX Backup ===
 Contributors: butterflymedia
+Donate link: https://buymeacoffee.com/wolffe
 Tags: backup, schedule, scheduler, local, migrate
 Requires at least: 2.7
 Requires PHP: 8.0
-Tested up to: 2.7
-Stable tag: 2.1.0
+Tested up to: 2.7.2
+Stable tag: 2.1.1
 
 == Description ==
 
 FX Backup creates local database backups and optional file archives (wp-content except the backup folder, plus site root files). Not a full-site backup (no wp-admin/wp-includes). Backups can be emailed as attachments. Copy files offsite for production use.
+
+Find more tools at [ClassicPress Plugins](https://getbutterfly.com/classicpress-plugins/).
 
 == Installation ==
 
@@ -17,6 +20,11 @@ FX Backup creates local database backups and optional file archives (wp-content 
 3. Go to the FX Backup page and configure it.
 
 == Changelog ==
+
+= 2.1.1 =
+* Confirm compatibility with ClassicPress 2.7.2.
+* Add links to ClassicPress Plugins and the donation page.
+* Add an installable plugin ZIP to each GitHub release.
 
 = 2.1.0 =
 * REBRAND: Smart Backup renamed to FX Backup (functions, CSS classes, option keys, cron hooks)

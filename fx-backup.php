@@ -3,7 +3,7 @@
 Plugin Name: FX Backup
 Plugin URI: http://getbutterfly.com/wordpress-plugins/fxbackup/
 Description: Local database backups plus optional file archives (wp-content and site root files) for ClassicPress.
-Version: 2.1.0
+Version: 2.1.1
 Author: Ciprian Popescu
 Author URI: http://getbutterfly.com/
 Requires at least: 2.7
@@ -15,7 +15,7 @@ if ( ! defined( 'FX_BACKUP_OPTIONS' ) ) {
 }
 define( 'FX_BACKUP_PLUGIN_URL', WP_PLUGIN_URL . '/' . dirname( plugin_basename( __FILE__ ) ) );
 define( 'FX_BACKUP_PLUGIN_PATH', WP_PLUGIN_DIR . '/' . dirname( plugin_basename( __FILE__ ) ) );
-define( 'FX_BACKUP_VERSION', '2.1.0' );
+define( 'FX_BACKUP_VERSION', '2.1.1' );
 
 require_once FX_BACKUP_PLUGIN_PATH . '/inc/admin-ui.php';
 
