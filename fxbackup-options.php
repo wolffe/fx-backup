@@ -99,8 +99,8 @@ fxbackup_render_stats_cards( $cfg['export_dir'] ?? '' );
             <div class="inside">
                 <p><?php _e( '<strong>FX Backup</strong> is a complete ClassicPress solution for database backup operations. You can create backups of your ClassicPress database. Backups can be restored from Backup Manager or used for easy migration.', 'fx-backup' ); ?></p>
                 <p>
-                    <a href="http://getbutterfly.com/wordpress-plugins/fxbackup/"><?php _e( 'Plugin Home', 'fx-backup' ); ?></a>
-                    <br><?php _e( 'For support, feature requests and bug reporting, visit the <a href="http://getbutterfly.com/wordpress-plugins/fxbackup/" rel="external">official website</a>.', 'fx-backup' ); ?>
+                    <a href="https://getbutterfly.com/wordpress-plugins/fxbackup/"><?php _e( 'Plugin Home', 'fx-backup' ); ?></a>
+                    <br><?php _e( 'For support, feature requests and bug reporting, visit the <a href="https://getbutterfly.com/wordpress-plugins/fxbackup/" rel="external">official website</a>.', 'fx-backup' ); ?>
                 </p>
             </div>
         </div>
