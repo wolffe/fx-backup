@@ -4,8 +4,9 @@ Donate link: https://buymeacoffee.com/wolffe
 Tags: backup, schedule, scheduler, local, migrate
 Requires at least: 2.7
 Requires PHP: 8.0
-Tested up to: 2.7.2
-Stable tag: 2.1.1
+Requires CP: 2.5
+Tested up to: 2.7.3
+Stable tag: 2.1.2
 
 == Description ==
 
@@ -20,6 +21,11 @@ Find more tools at [ClassicPress Plugins](https://getbutterfly.com/classicpress-
 3. Go to the FX Backup page and configure it.
 
 == Changelog ==
+
+= 2.1.2 =
+* Confirm compatibility with ClassicPress 2.7.3.
+* Record a failed database dump as Failed, and log the gzip file when compression succeeds.
+* Use https for getButterfly links.
 
 = 2.1.1 =
 * Confirm compatibility with ClassicPress 2.7.2.

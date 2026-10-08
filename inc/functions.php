@@ -50,6 +50,7 @@ function fxbackup_exec( $file, $action ) {
     $tables = $wpdb->get_results( 'SHOW TABLES', ARRAY_A );
 
     if ( empty( $tables ) ) {
+        fclose( $handle );
         return new WP_Error( 'db_dump', __( 'There are no tables in the database.', 'fx-backup' ) );
     }
 
@@ -106,33 +107,15 @@ function fxbackup_exec( $file, $action ) {
     fclose( $handle );
 
     $cfg = function_exists( 'fxbackup_get_options' ) ? fxbackup_get_options() : [ 'compression' => 'none' ];
-    if ( $cfg['compression'] == 'gz' ) {
-        fxbackup_compress( $file );
+    if ( $cfg['compression'] === 'gz' ) {
+        $compressed = fxbackup_compress( $file );
+        if ( $compressed === false ) {
+            return new WP_Error( 'db_dump', __( 'Could not compress the database backup.', 'fx-backup' ) );
+        }
         unlink( $file );
     }
-}
 
-function fxbackup_open( $fp, $mode = 'write' ) {
-    switch ( FX_BACKUP_COMPRESSION ) {
-        case 'gz':
-            if ( $mode == 'write' ) {
-                $fp   = $fp . '.sql.gz';
-                $file = @gzopen( $fp, 'w' . FX_BACKUP_GZIP_LVL );
-            } else {
-                $file = @gzopen( $fp, 'r' );
-            }
-            break;
-
-        default:
-            if ( $mode == 'write' ) {
-                $fp   = $fp . '.sql';
-                $file = @fopen( $fp, 'w' );
-            } else {
-                $file = @fopen( $fp, 'r' );
-            }
-            break;
-    }
-    return [ $file, $fp ];
+    return true;
 }
 
 function fxbackup_tar_available() {
