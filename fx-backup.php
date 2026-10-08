@@ -47,8 +47,11 @@ function fxbackup_get_options() {
 }
 
 function fxbackup_admin_menu() {
+    // phpcs:ignore WordPress.Security.PluginMenuSlug -- Slug is a file path WordPress includes as the screen.
     add_menu_page( __( 'FX Backup', 'fx-backup' ), __( 'FX Backup', 'fx-backup' ), 'manage_options', __FILE__, 'fxbackup_render_settings_page', 'dashicons-cloud' );
+    // phpcs:ignore WordPress.Security.PluginMenuSlug -- Slug is a file path WordPress includes as the screen.
     add_submenu_page( __FILE__, __( 'Backup Manager', 'fx-backup' ), __( 'Backup Manager', 'fx-backup' ), 'manage_options', FX_BACKUP_PLUGIN_PATH . '/fxbackup-manager.php' );
+    // phpcs:ignore WordPress.Security.PluginMenuSlug -- Slug is a file path WordPress includes as the screen.
     add_submenu_page( __FILE__, __( 'Files Manager', 'fx-backup' ), __( 'Files Manager', 'fx-backup' ), 'manage_options', FX_BACKUP_PLUGIN_PATH . '/fxbackup-files.php' );
 }
 
@@ -67,8 +70,10 @@ function fxbackup_install() {
 add_action( 'do_fx_backup', 'fxbackup_run' );
 
 function fxbackup_run() {
+    // phpcs:disable WordPress.PHP.NoSilencedErrors.Discouraged -- ini_set for a backup may fail; that is non-fatal.
     @ini_set( 'memory_limit', '256M' );
     @ini_set( 'max_execution_time', 600 );
+    // phpcs:enable WordPress.PHP.NoSilencedErrors.Discouraged
 
     if ( defined( 'FX_BACKUP_RETURN' ) ) {
         return;
@@ -142,6 +147,7 @@ function fxbackup_run() {
     update_option( FX_BACKUP_OPTIONS, $cfg );
 }
 
+// phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval -- Interval comes from the saved schedule, not a literal.
 add_filter( 'cron_schedules', 'fxbackup_interval' );
 
 function fxbackup_interval() {

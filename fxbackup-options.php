@@ -4,25 +4,27 @@ $fxbackup_msg = [];
 
 if ( isset( $_POST['fxbackupsubmit'] ) ) {
     check_admin_referer( 'fxbackup_options' );
-    $temp['export_dir']      = rtrim( stripslashes_deep( trim( $_POST['export_dir'] ?? '' ) ), '/' );
-    $temp['compression']     = stripslashes_deep( trim( $_POST['compression'] ?? 'none' ) );
+    $export_dir              = isset( $_POST['export_dir'] ) ? sanitize_text_field( wp_unslash( $_POST['export_dir'] ) ) : '';
+    $temp['export_dir']      = rtrim( $export_dir, '/' );
+    $compression             = isset( $_POST['compression'] ) ? sanitize_key( wp_unslash( $_POST['compression'] ) ) : 'none';
+    $temp['compression']     = in_array( $compression, [ 'none', 'gz' ], true ) ? $compression : 'none';
     $temp['gzip_lvl']        = intval( $_POST['gzip_lvl'] ?? 1 );
     $temp['period']          = intval( $_POST['severy'] ?? 1 ) * intval( $_POST['speriod'] ?? 86400 );
     $temp['active']          = ! empty( $_POST['active'] ) ? 1 : 0;
     $temp['rotate']          = intval( $_POST['rotate'] ?? -1 );
     $temp['logs']            = $cfg['logs'] ?? [];
-    $temp['smart_email']     = sanitize_email( $_POST['smart_email'] ?? '' );
+    $temp['smart_email']     = sanitize_email( wp_unslash( $_POST['smart_email'] ?? '' ) );
     $temp['send_attachment'] = ! empty( $_POST['send_attachment'] ) ? 1 : 0;
     $temp['backup_files']    = ! empty( $_POST['backup_files'] ) ? 1 : 0;
 
     $timenow          = time();
-    $year             = wp_date( 'Y', $timenow );
+    $schedule_year    = wp_date( 'Y', $timenow );
     $month            = wp_date( 'n', $timenow );
     $day              = wp_date( 'j', $timenow );
     $hours            = intval( $_POST['hours'] ?? 0 );
     $minutes          = intval( $_POST['minutes'] ?? 0 );
     $seconds          = intval( $_POST['seconds'] ?? 0 );
-    $temp['schedule'] = mktime( $hours, $minutes, $seconds, $month, $day, $year );
+    $temp['schedule'] = mktime( $hours, $minutes, $seconds, $month, $day, $schedule_year );
 
     update_option( FX_BACKUP_OPTIONS, $temp );
 
@@ -45,13 +47,18 @@ if ( ! empty( $cfg['export_dir'] ) ) {
             $fxbackup_msg[] = sprintf( __( 'Folder <strong>%s</strong> was not created. Check permissions!', 'fx-backup' ), esc_html( $cfg['export_dir'] ) );
         }
     } else {
-        $fxbackup_msg[] = sprintf( __( '<small>Folder <strong>%s</strong> is available</small>', 'fx-backup' ), esc_html( $cfg['export_dir'] ) );
+        $fxbackup_msg[] = '<small>' . sprintf(
+            /* translators: %s: backup folder path */
+            __( 'Folder %s is available', 'fx-backup' ),
+            esc_html( $cfg['export_dir'] )
+        ) . '</small>';
     }
 
     if ( is_dir( $cfg['export_dir'] ) ) {
         $condoms = [ '.htaccess', 'index.html' ];
         foreach ( $condoms as $condom ) {
             if ( ! file_exists( $cfg['export_dir'] . '/' . $condom ) ) {
+                // phpcs:disable WordPress.WP.AlternativeFunctions -- Backup folder can sit outside the WordPress filesystem API.
                 $file = fopen( $cfg['export_dir'] . '/' . $condom, 'w' );
                 if ( $file ) {
                     $contents = ( $condom === 'index.html' ) ? '' : "Deny from all\n";
@@ -61,6 +68,7 @@ if ( ! empty( $cfg['export_dir'] ) ) {
                 } else {
                     $fxbackup_msg[] = sprintf( __( 'File <strong>%s</strong> was not created. Check permissions!', 'fx-backup' ), esc_html( $condom ) );
                 }
+                // phpcs:enable WordPress.WP.AlternativeFunctions
             } else {
                 $fxbackup_msg[] = sprintf( __( 'File <strong>%s</strong> is available', 'fx-backup' ), esc_html( $condom ) );
             }
@@ -95,12 +103,26 @@ fxbackup_render_stats_cards( $cfg['export_dir'] ?? '' );
 
     <div id="poststuff">
         <div class="postbox">
-            <h3><?php _e( 'Welcome', 'fx-backup' ); ?></h3>
+            <h3><?php esc_html_e( 'Welcome', 'fx-backup' ); ?></h3>
             <div class="inside">
-                <p><?php _e( '<strong>FX Backup</strong> is a complete ClassicPress solution for database backup operations. You can create backups of your ClassicPress database. Backups can be restored from Backup Manager or used for easy migration.', 'fx-backup' ); ?></p>
+                <p><?php echo wp_kses( __( '<strong>FX Backup</strong> is a complete ClassicPress solution for database backup operations. You can create backups of your ClassicPress database. Backups can be restored from Backup Manager or used for easy migration.', 'fx-backup' ), [ 'strong' => [] ] ); ?></p>
                 <p>
-                    <a href="https://getbutterfly.com/wordpress-plugins/fxbackup/"><?php _e( 'Plugin Home', 'fx-backup' ); ?></a>
-                    <br><?php _e( 'For support, feature requests and bug reporting, visit the <a href="https://getbutterfly.com/wordpress-plugins/fxbackup/" rel="external">official website</a>.', 'fx-backup' ); ?>
+                    <a href="https://getbutterfly.com/wordpress-plugins/fxbackup/"><?php esc_html_e( 'Plugin Home', 'fx-backup' ); ?></a>
+                    <br><?php
+                    echo wp_kses(
+                        sprintf(
+                            /* translators: %s: plugin website URL */
+                            __( 'For support, feature requests and bug reporting, visit the <a href="%s" rel="external">official website</a>.', 'fx-backup' ),
+                            esc_url( 'https://getbutterfly.com/wordpress-plugins/fxbackup/' )
+                        ),
+                        [
+                            'a' => [
+                                'href' => [],
+                                'rel'  => [],
+                            ],
+                        ]
+                    );
+                    ?>
                 </p>
             </div>
         </div>
@@ -109,7 +131,7 @@ fxbackup_render_stats_cards( $cfg['export_dir'] ?? '' );
     <div class="postbox-container" style="width: 100%">
         <div class="metabox-holder">
             <div class="postbox">
-                <h3 class="hndle"><span><?php _e( 'Diagnostics', 'fx-backup' ); ?></span></h3>
+                <h3 class="hndle"><span><?php esc_html_e( 'Diagnostics', 'fx-backup' ); ?></span></h3>
                 <div class="inside">
                     <?php if ( ! empty( $fxbackup_msg ) ) { ?>
                         <p><?php echo implode( '<br>', $fxbackup_msg ); ?></p>
@@ -140,20 +162,20 @@ fxbackup_render_stats_cards( $cfg['export_dir'] ?? '' );
     <div class="postbox-container" style="width: 100%">
         <div class="metabox-holder">
             <div class="postbox">
-                <h3 class="hndle"><span><?php _e( 'Plugin Settings', 'fx-backup' ); ?></span></h3>
+                <h3 class="hndle"><span><?php esc_html_e( 'Plugin Settings', 'fx-backup' ); ?></span></h3>
                 <div class="inside">
                     <form method="post" action="">
                         <?php wp_nonce_field( 'fxbackup_options' ); ?>
-                        <h4><?php _e( 'General Settings', 'fx-backup' ); ?></h4>
+                        <h4><?php esc_html_e( 'General Settings', 'fx-backup' ); ?></h4>
                         <p>
                             <input type="text" name="export_dir" id="export_dir" value="<?php echo esc_attr( $cfg['export_dir'] ); ?>" class="regular-text">
-                            <label for="export_dir"><?php _e( 'Backup directory', 'fx-backup' ); ?></label>
-                            <br><small><?php _e( 'All your backups will be saved here. Default is', 'fx-backup' ); ?> <?php echo esc_html( WP_CONTENT_DIR . '/fxbackups' ); ?></small>
+                            <label for="export_dir"><?php esc_html_e( 'Backup directory', 'fx-backup' ); ?></label>
+                            <br><small><?php esc_html_e( 'All your backups will be saved here. Default is', 'fx-backup' ); ?> <?php echo esc_html( WP_CONTENT_DIR . '/fxbackups' ); ?></small>
                         </p>
                         <p>
                             <input type="email" name="smart_email" id="smart_email" value="<?php echo esc_attr( $cfg['smart_email'] ); ?>" class="regular-text">
-                            <label for="smart_email"><?php _e( 'Notification email', 'fx-backup' ); ?></label>
-                            <br><small><?php _e( 'You will receive notification messages at this address.', 'fx-backup' ); ?></small>
+                            <label for="smart_email"><?php esc_html_e( 'Notification email', 'fx-backup' ); ?></label>
+                            <br><small><?php esc_html_e( 'You will receive notification messages at this address.', 'fx-backup' ); ?></small>
                         </p>
                         <p>
                             <?php
@@ -161,11 +183,11 @@ fxbackup_render_stats_cards( $cfg['export_dir'] ?? '' );
                             $gz_selected   = ( $cfg['compression'] === 'gz' ) ? 'selected' : '';
                             ?>
                             <select name="compression" id="compression">
-                                <option value="none" <?php echo $none_selected; ?>><?php _e( 'None', 'fx-backup' ); ?></option>
+                                <option value="none" <?php echo $none_selected; ?>><?php esc_html_e( 'None', 'fx-backup' ); ?></option>
                                 <?php
                                 if ( function_exists( 'gzopen' ) ) {
                                     ?>
-                                    <option value="gz" <?php echo $gz_selected; ?>><?php _e( 'GZIP', 'fx-backup' ); ?></option> <?php } ?>
+                                    <option value="gz" <?php echo $gz_selected; ?>><?php esc_html_e( 'GZIP', 'fx-backup' ); ?></option> <?php } ?>
                             </select>
                             <?php if ( function_exists( 'gzopen' ) ) { ?>
                                 <select name="gzip_lvl">
@@ -179,10 +201,10 @@ fxbackup_render_stats_cards( $cfg['export_dir'] ?? '' );
                             <?php } ?>
                         </p>
                         <p>
-                            <input type="checkbox" name="active" value="1" <?php checked( ! empty( $cfg['active'] ) ); ?>> <?php _e( 'Activate backup schedule', 'fx-backup' ); ?><br>
-                            <input type="checkbox" name="send_attachment" value="1"<?php checked( ! empty( $cfg['send_attachment'] ) ); ?> /> <?php _e( 'Send backup as attachment', 'fx-backup' ); ?><br>
-                            <input type="checkbox" name="backup_files" value="1"<?php checked( ! empty( $cfg['backup_files'] ) ); ?> /> <?php _e( 'Include file backup (wp-content and site root files)', 'fx-backup' ); ?>
-                            <br><small><?php _e( 'Creates a .tar.gz with wp-content (excluding this backup folder) and root files such as wp-config.php. Needs tar and enough disk space. Copy backups offsite for production sites.', 'fx-backup' ); ?></small><br>
+                            <input type="checkbox" name="active" value="1" <?php checked( ! empty( $cfg['active'] ) ); ?>> <?php esc_html_e( 'Activate backup schedule', 'fx-backup' ); ?><br>
+                            <input type="checkbox" name="send_attachment" value="1"<?php checked( ! empty( $cfg['send_attachment'] ) ); ?> /> <?php esc_html_e( 'Send backup as attachment', 'fx-backup' ); ?><br>
+                            <input type="checkbox" name="backup_files" value="1"<?php checked( ! empty( $cfg['backup_files'] ) ); ?> /> <?php esc_html_e( 'Include file backup (wp-content and site root files)', 'fx-backup' ); ?>
+                            <br><small><?php esc_html_e( 'Creates a .tar.gz with wp-content (excluding this backup folder) and root files such as wp-config.php. Needs tar and enough disk space. Copy backups offsite for production sites.', 'fx-backup' ); ?></small><br>
                             <?php
                             list($hours, $minutes, $seconds) = explode( '-', wp_date( 'H-i-s', (int) $cfg['schedule'] ) );
                             $times                           = [ 'hours', 'minutes', 'seconds' ];
@@ -193,7 +215,7 @@ fxbackup_render_stats_cards( $cfg['export_dir'] ?? '' );
                                 2592000 => __( 'Month(s)', 'fx-backup' ),
                             ];
                             ?>
-                            <strong><?php _e( 'Run every ', 'fx-backup' ); ?></strong>
+                            <strong><?php esc_html_e( 'Run every ', 'fx-backup' ); ?></strong>
                             <select name="severy">
                                 <?php
                                 for ( $i = 1; $i <= 12; $i++ ) {
@@ -211,7 +233,7 @@ fxbackup_render_stats_cards( $cfg['export_dir'] ?? '' );
                                 <?php } ?>
                             </select>
 
-                            <strong><?php _e( 'When', 'fx-backup' ); ?></strong>
+                            <strong><?php esc_html_e( 'When', 'fx-backup' ); ?></strong>
                             <?php
                             foreach ( $times as $time ) {
                                 $max = $time === 'hours' ? 24 : 60;
@@ -245,7 +267,7 @@ fxbackup_render_stats_cards( $cfg['export_dir'] ?? '' );
                                     <option value="<?php echo esc_attr( (string) $i ); ?>" <?php selected( (int) $cfg['rotate'], $i ); ?>><?php echo esc_html( $display ); ?></option>
                                 <?php } ?>
                             </select>
-                            <br><small><?php _e( 'The removal of old backups occurs during new backup generation.', 'fx-backup' ); ?></small>
+                            <br><small><?php esc_html_e( 'The removal of old backups occurs during new backup generation.', 'fx-backup' ); ?></small>
                         </p>
 
                         <p>
