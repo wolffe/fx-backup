@@ -41,25 +41,24 @@ function fxbackup_disk_stats( $export_dir = '' ) {
         return $stats;
     }
 
-    while ( false !== ( $file = readdir( $handle ) ) ) {
-        if ( ! fxbackup_is_rotatable_backup_file( $file ) ) {
-            continue;
+    $file = readdir( $handle );
+    while ( false !== $file ) {
+        if ( fxbackup_is_rotatable_backup_file( $file ) ) {
+            $path = $export_dir . '/' . $file;
+            if ( is_file( $path ) ) {
+                $size = filesize( $path );
+                if ( $size !== false ) {
+                    ++$stats['count'];
+                    $stats['bytes'] += $size;
+                    if ( preg_match( '/\.tar\.gz$/i', $file ) ) {
+                        ++$stats['files'];
+                    } else {
+                        ++$stats['db'];
+                    }
+                }
+            }
         }
-        $path = $export_dir . '/' . $file;
-        if ( ! is_file( $path ) ) {
-            continue;
-        }
-        $size = filesize( $path );
-        if ( $size === false ) {
-            continue;
-        }
-        ++$stats['count'];
-        $stats['bytes'] += $size;
-        if ( preg_match( '/\.tar\.gz$/i', $file ) ) {
-            ++$stats['files'];
-        } else {
-            ++$stats['db'];
-        }
+        $file = readdir( $handle );
     }
     closedir( $handle );
 

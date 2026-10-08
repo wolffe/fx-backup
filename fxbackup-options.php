@@ -134,7 +134,7 @@ fxbackup_render_stats_cards( $cfg['export_dir'] ?? '' );
                 <h3 class="hndle"><span><?php esc_html_e( 'Diagnostics', 'fx-backup' ); ?></span></h3>
                 <div class="inside">
                     <?php if ( ! empty( $fxbackup_msg ) ) { ?>
-                        <p><?php echo implode( '<br>', $fxbackup_msg ); ?></p>
+                        <p><?php echo wp_kses_post( implode( '<br>', $fxbackup_msg ) ); ?></p>
                     <?php } ?>
                     <?php
                     $scheduledtime = wp_next_scheduled( 'do_fx_backup' );
@@ -178,24 +178,19 @@ fxbackup_render_stats_cards( $cfg['export_dir'] ?? '' );
                             <br><small><?php esc_html_e( 'You will receive notification messages at this address.', 'fx-backup' ); ?></small>
                         </p>
                         <p>
-                            <?php
-                            $none_selected = ( $cfg['compression'] === 'none' ) ? 'selected' : '';
-                            $gz_selected   = ( $cfg['compression'] === 'gz' ) ? 'selected' : '';
-                            ?>
                             <select name="compression" id="compression">
-                                <option value="none" <?php echo $none_selected; ?>><?php esc_html_e( 'None', 'fx-backup' ); ?></option>
+                                <option value="none" <?php selected( $cfg['compression'], 'none' ); ?>><?php esc_html_e( 'None', 'fx-backup' ); ?></option>
                                 <?php
                                 if ( function_exists( 'gzopen' ) ) {
                                     ?>
-                                    <option value="gz" <?php echo $gz_selected; ?>><?php esc_html_e( 'GZIP', 'fx-backup' ); ?></option> <?php } ?>
+                                    <option value="gz" <?php selected( $cfg['compression'], 'gz' ); ?>><?php esc_html_e( 'GZIP', 'fx-backup' ); ?></option> <?php } ?>
                             </select>
                             <?php if ( function_exists( 'gzopen' ) ) { ?>
                                 <select name="gzip_lvl">
                                     <?php
                                     for ( $i = 1; $i <= 9; $i++ ) {
-                                        $selected = ( (int) $cfg['gzip_lvl'] === $i ) ? 'selected' : '';
                                         ?>
-                                        <option value="<?php echo esc_attr( (string) $i ); ?>" <?php echo $selected; ?>><?php echo esc_html( sprintf( __( 'Use GZIP compression level %d', 'fx-backup' ), $i ) ); ?></option>
+                                        <option value="<?php echo esc_attr( (string) $i ); ?>" <?php selected( (int) $cfg['gzip_lvl'], $i ); ?>><?php echo esc_html( sprintf( __( 'Use GZIP compression level %d', 'fx-backup' ), $i ) ); ?></option>
                                     <?php } ?>
                                 </select>
                             <?php } ?>
@@ -219,17 +214,15 @@ fxbackup_render_stats_cards( $cfg['export_dir'] ?? '' );
                             <select name="severy">
                                 <?php
                                 for ( $i = 1; $i <= 12; $i++ ) {
-                                    $selected = ( $severy === $i ) ? 'selected' : '';
                                     ?>
-                                    <option <?php echo $selected; ?>><?php echo esc_html( (string) $i ); ?></option>
+                                    <option <?php selected( $severy, $i ); ?>><?php echo esc_html( (string) $i ); ?></option>
                                 <?php } ?>
                             </select>
                             <select name="speriod">
                                 <?php
                                 foreach ( $periods as $period_val => $display ) {
-                                    $selected = ( $period_val === $speriod ) ? 'selected' : '';
                                     ?>
-                                    <option value="<?php echo esc_attr( (string) $period_val ); ?>" <?php echo $selected; ?>><?php echo esc_html( $display ); ?></option>
+                                    <option value="<?php echo esc_attr( (string) $period_val ); ?>" <?php selected( $period_val, $speriod ); ?>><?php echo esc_html( $display ); ?></option>
                                 <?php } ?>
                             </select>
 
@@ -241,9 +234,8 @@ fxbackup_render_stats_cards( $cfg['export_dir'] ?? '' );
                                 : <select name="<?php echo esc_attr( $time ); ?>">
                                     <?php
                                     for ( $i = 0; $i < $max; $i++ ) {
-                                        $selected = ( ${$time} == $i ) ? 'selected' : '';
                                         ?>
-                                        <option <?php echo $selected; ?>><?php echo esc_html( (string) $i ); ?></option>
+                                        <option <?php selected( (int) ${$time}, $i ); ?>><?php echo esc_html( (string) $i ); ?></option>
                                     <?php } ?>
                                 </select>
                             <?php } ?>

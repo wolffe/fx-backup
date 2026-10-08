@@ -70,10 +70,8 @@ function fxbackup_install() {
 add_action( 'do_fx_backup', 'fxbackup_run' );
 
 function fxbackup_run() {
-    // phpcs:disable WordPress.PHP.NoSilencedErrors.Discouraged -- ini_set for a backup may fail; that is non-fatal.
-    @ini_set( 'memory_limit', '256M' );
-    @ini_set( 'max_execution_time', 600 );
-    // phpcs:enable WordPress.PHP.NoSilencedErrors.Discouraged
+    wp_raise_memory_limit( 'admin' );
+    set_time_limit( 600 );
 
     if ( defined( 'FX_BACKUP_RETURN' ) ) {
         return;
@@ -147,8 +145,7 @@ function fxbackup_run() {
     update_option( FX_BACKUP_OPTIONS, $cfg );
 }
 
-// phpcs:ignore WordPress.WP.CronInterval.CronSchedulesInterval -- Interval comes from the saved schedule, not a literal.
-add_filter( 'cron_schedules', 'fxbackup_interval' );
+add_filter( 'cron_schedules', 'fxbackup_interval' ); // phpcs:ignore WordPress.WP.CronInterval.ChangeDetected -- Interval comes from the saved schedule, not a literal.
 
 function fxbackup_interval() {
     $cfg    = fxbackup_get_options();

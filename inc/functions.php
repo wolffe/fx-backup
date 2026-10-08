@@ -1,4 +1,7 @@
 <?php
+// phpcs:disable WordPress.WP.AlternativeFunctions -- Backup streams SQL dumps and gzip data outside WP_Filesystem.
+// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec -- tar archives require exec().
+
 function fxbackup_compress( $source, $level = 9 ) {
     $cfg   = function_exists( 'fxbackup_get_options' ) ? fxbackup_get_options() : [ 'gzip_lvl' => 1 ];
     $level = max( 1, min( 9, (int) $cfg['gzip_lvl'] ) );
@@ -55,8 +58,10 @@ function fxbackup_exec( $file, $action ) {
     }
 
     foreach ( $tables as $table_array ) {
-        $table  = current( $table_array );
-        $create = $wpdb->get_var( "SHOW CREATE TABLE `{$table}`", 1 );
+        $table     = (string) current( $table_array );
+        $table_sql = esc_sql( $table );
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.DirectDatabaseQuery.SchemaChange -- Table name from SHOW TABLES, escaped with esc_sql().
+        $create = $wpdb->get_var( "SHOW CREATE TABLE `{$table_sql}`", 1 );
         $myisam = strpos( $create, 'MyISAM' );
 
         fwrite( $handle, '/* Dump of table `' . $table . "`\n" );
@@ -64,7 +69,8 @@ function fxbackup_exec( $file, $action ) {
 
         fwrite( $handle, 'DROP TABLE IF EXISTS `' . $table . "`;\n\n" . $create . ";\n\n" );
 
-        $data = $wpdb->get_results( 'SELECT * FROM `' . $table . '` LIMIT 1000', ARRAY_A );
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from SHOW TABLES, escaped with esc_sql().
+        $data = $wpdb->get_results( "SELECT * FROM `{$table_sql}` LIMIT 1000", ARRAY_A );
         if ( ! empty( $data ) ) {
             fwrite( $handle, 'LOCK TABLES `' . $table . "` WRITE;\n" );
             if ( false !== $myisam ) {
@@ -87,7 +93,8 @@ function fxbackup_exec( $file, $action ) {
                 }
 
                 $offset += 1000;
-                $data    = $wpdb->get_results( 'SELECT * FROM `' . $table . '` LIMIT ' . $offset . ',1000', ARRAY_A );
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name from SHOW TABLES, escaped with esc_sql(). Offset is a %d placeholder.
+                $data = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM `{$table_sql}` LIMIT %d, 1000", $offset ), ARRAY_A );
             } while ( ! empty( $data ) );
 
             if ( false !== $myisam ) {
@@ -252,18 +259,18 @@ function fxbackup_rotate( $cfg, $timenow ) {
         return $removed;
     }
 
-    while ( false !== ( $file = readdir( $handle ) ) ) {
-        if ( ! fxbackup_is_rotatable_backup_file( $file ) ) {
-            continue;
+    $file = readdir( $handle );
+    while ( false !== $file ) {
+        if ( fxbackup_is_rotatable_backup_file( $file ) ) {
+            $path = $dir . '/' . $file;
+            if ( is_file( $path ) ) {
+                $mtime = filemtime( $path );
+                if ( $mtime !== false && $timenow > $mtime + $compare && unlink( $path ) ) {
+                    ++$removed;
+                }
+            }
         }
-        $path = $dir . '/' . $file;
-        if ( ! is_file( $path ) ) {
-            continue;
-        }
-        $mtime = filemtime( $path );
-        if ( $mtime !== false && $timenow > $mtime + $compare && unlink( $path ) ) {
-            ++$removed;
-        }
+        $file = readdir( $handle );
     }
     closedir( $handle );
     return $removed;

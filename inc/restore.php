@@ -1,4 +1,7 @@
 <?php
+// phpcs:disable WordPress.WP.AlternativeFunctions -- Restore streams dumps and writes a mysql client file outside WP_Filesystem.
+// phpcs:disable WordPress.PHP.DiscouragedPHPFunctions.system_calls_exec -- mysql and tar are required for restore.
+// phpcs:disable WordPress.DB.RestrictedFunctions -- Bulk SQL import uses mysqli_multi_query; $wpdb->query() cannot run a dump.
 
 function fxbackup_resolve_backup_path( $basename, $export_dir ) {
     $basename = sanitize_file_name( $basename );
@@ -55,7 +58,7 @@ function fxbackup_decompress_sql_dump( $path ) {
             if ( $out ) {
                 fclose( $out );
             }
-            @unlink( $temp );
+            wp_delete_file( $temp );
             return new WP_Error( 'restore', __( 'Could not decompress the backup file.', 'fx-backup' ) );
         }
         while ( ! gzeof( $in ) ) {
@@ -94,7 +97,7 @@ function fxbackup_restore_database_cli( $sql_path ) {
         . ' < ' . escapeshellarg( $sql_path );
     $return_var = 1;
     exec( $cmd, $output, $return_var );
-    @unlink( $cnf );
+    wp_delete_file( $cnf );
     return $return_var === 0;
 }
 
@@ -128,13 +131,18 @@ function fxbackup_restore_database_mysqli( $sql_path ) {
     return true;
 }
 
+function fxbackup_restore_memory_limit() {
+    return '512M';
+}
+
 function fxbackup_restore_database( $path ) {
     if ( ! fxbackup_is_database_backup( basename( $path ) ) ) {
         return new WP_Error( 'restore', __( 'Not a database backup file.', 'fx-backup' ) );
     }
 
-    @ini_set( 'memory_limit', '512M' );
-    @ini_set( 'max_execution_time', '600' );
+    add_filter( 'admin_memory_limit', 'fxbackup_restore_memory_limit' );
+    wp_raise_memory_limit( 'admin' );
+    set_time_limit( 600 );
 
     $sql_path = fxbackup_decompress_sql_dump( $path );
     if ( is_wp_error( $sql_path ) ) {
@@ -148,7 +156,7 @@ function fxbackup_restore_database( $path ) {
         $result = fxbackup_restore_database_cli( $sql_path );
         if ( $result ) {
             if ( $temp ) {
-                @unlink( $sql_path );
+                wp_delete_file( $sql_path );
             }
             return true;
         }
@@ -156,7 +164,7 @@ function fxbackup_restore_database( $path ) {
 
     $result = fxbackup_restore_database_mysqli( $sql_path );
     if ( $temp ) {
-        @unlink( $sql_path );
+        wp_delete_file( $sql_path );
     }
 
     if ( is_wp_error( $result ) ) {
@@ -218,22 +226,22 @@ function fxbackup_list_disk_backups( $export_dir ) {
     if ( $handle === false ) {
         return $items;
     }
-    while ( false !== ( $file = readdir( $handle ) ) ) {
-        if ( ! fxbackup_is_rotatable_backup_file( $file ) ) {
-            continue;
+    $file = readdir( $handle );
+    while ( false !== $file ) {
+        if ( fxbackup_is_rotatable_backup_file( $file ) ) {
+            $path = $export_dir . '/' . $file;
+            if ( is_file( $path ) ) {
+                $mtime   = filemtime( $path );
+                $items[] = [
+                    'basename' => $file,
+                    'path'     => wp_normalize_path( $path ),
+                    'size'     => filesize( $path ),
+                    'mtime'    => $mtime !== false ? $mtime : 0,
+                    'type'     => fxbackup_is_files_backup( $file ) ? 'files' : 'database',
+                ];
+            }
         }
-        $path = $export_dir . '/' . $file;
-        if ( ! is_file( $path ) ) {
-            continue;
-        }
-        $mtime   = filemtime( $path );
-        $items[] = [
-            'basename' => $file,
-            'path'     => wp_normalize_path( $path ),
-            'size'     => filesize( $path ),
-            'mtime'    => $mtime !== false ? $mtime : 0,
-            'type'     => fxbackup_is_files_backup( $file ) ? 'files' : 'database',
-        ];
+        $file = readdir( $handle );
     }
     closedir( $handle );
     usort(

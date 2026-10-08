@@ -12,20 +12,23 @@ if ( isset( $_POST['fxbackup_restore_db'] ) || isset( $_POST['fxbackup_restore_f
     }
     check_admin_referer( 'fxbackup_restore' );
 
-    if ( ! fxbackup_restore_confirm_valid( $_POST['confirm_text'] ?? '' ) ) {
+    $confirm_text = isset( $_POST['confirm_text'] ) ? sanitize_text_field( wp_unslash( $_POST['confirm_text'] ) ) : '';
+    $backup_file  = isset( $_POST['backup_file'] ) ? sanitize_file_name( wp_unslash( $_POST['backup_file'] ) ) : '';
+
+    if ( ! fxbackup_restore_confirm_valid( $confirm_text ) ) {
         $restore_notice = [
             'type' => 'error',
             'text' => __( 'Confirmation did not match. Type your site name or RESTORE to proceed.', 'fx-backup' ),
         ];
     } else {
-        $path = fxbackup_resolve_backup_path( $_POST['backup_file'] ?? '', $export_dir );
-        if ( $path === '' ) {
+        $backup_path = fxbackup_resolve_backup_path( $backup_file, $export_dir );
+        if ( $backup_path === '' ) {
             $restore_notice = [
                 'type' => 'error',
                 'text' => __( 'Invalid backup file.', 'fx-backup' ),
             ];
         } elseif ( isset( $_POST['fxbackup_restore_db'] ) ) {
-            $result = fxbackup_restore_database( $path );
+            $result = fxbackup_restore_database( $backup_path );
             if ( is_wp_error( $result ) ) {
                 $restore_notice = [
                     'type' => 'error',
@@ -34,11 +37,11 @@ if ( isset( $_POST['fxbackup_restore_db'] ) || isset( $_POST['fxbackup_restore_f
             } else {
                 $restore_notice = [
                     'type' => 'updated',
-                    'text' => sprintf( __( 'Database restored from %s.', 'fx-backup' ), basename( $path ) ),
+                    'text' => sprintf( __( 'Database restored from %s.', 'fx-backup' ), basename( $backup_path ) ),
                 ];
             }
         } else {
-            $result = fxbackup_restore_files( $path, $export_dir );
+            $result = fxbackup_restore_files( $backup_path, $export_dir );
             if ( is_wp_error( $result ) ) {
                 $restore_notice = [
                     'type' => 'error',
@@ -47,7 +50,7 @@ if ( isset( $_POST['fxbackup_restore_db'] ) || isset( $_POST['fxbackup_restore_f
             } else {
                 $restore_notice = [
                     'type' => 'updated',
-                    'text' => sprintf( __( 'Files restored from %s.', 'fx-backup' ), basename( $path ) ),
+                    'text' => sprintf( __( 'Files restored from %s.', 'fx-backup' ), basename( $backup_path ) ),
                 ];
             }
         }
@@ -70,11 +73,11 @@ if ( $restore_notice !== '' ) {
         <thead>
             <tr>
                 <th scope="col">#</th>
-                <th scope="col"><?php _e( 'Type', 'fx-backup' ); ?></th>
-                <th scope="col"><?php _e( 'Modified', 'fx-backup' ); ?></th>
-                <th scope="col"><?php _e( 'File (backup name)', 'fx-backup' ); ?></th>
-                <th scope="col"><?php _e( 'Filesize', 'fx-backup' ); ?></th>
-                <th scope="col"><?php _e( 'Actions', 'fx-backup' ); ?></th>
+                <th scope="col"><?php esc_html_e( 'Type', 'fx-backup' ); ?></th>
+                <th scope="col"><?php esc_html_e( 'Modified', 'fx-backup' ); ?></th>
+                <th scope="col"><?php esc_html_e( 'File (backup name)', 'fx-backup' ); ?></th>
+                <th scope="col"><?php esc_html_e( 'Filesize', 'fx-backup' ); ?></th>
+                <th scope="col"><?php esc_html_e( 'Actions', 'fx-backup' ); ?></th>
             </tr>
         </thead>
         <tbody>
@@ -151,13 +154,13 @@ if ( $restore_notice !== '' ) {
 
 <div id="poststuff">
     <div class="postbox">
-        <h3 class="hndle"><span><?php _e( 'Manager Status', 'fx-backup' ); ?></span></h3>
+        <h3 class="hndle"><span><?php esc_html_e( 'Manager Status', 'fx-backup' ); ?></span></h3>
         <div class="inside">
             <p>
-                <strong><?php _e( 'Your site is protected by FX Backup.', 'fx-backup' ); ?></strong><br>
+                <strong><?php esc_html_e( 'Your site is protected by FX Backup.', 'fx-backup' ); ?></strong><br>
                 <?php echo wp_kses_post( sprintf( __( 'There are %s backup files on disk.', 'fx-backup' ), '<strong>' . count( $disk_backups ) . '</strong>' ) ); ?>
             </p>
-            <p><span class="description"><?php _e( 'Database and file archives are stored in your backup folder. Copy important backups offsite before restoring on a live site.', 'fx-backup' ); ?></span></p>
+            <p><span class="description"><?php esc_html_e( 'Database and file archives are stored in your backup folder. Copy important backups offsite before restoring on a live site.', 'fx-backup' ); ?></span></p>
             <?php fxbackup_render_environment_badges(); ?>
         </div>
     </div>

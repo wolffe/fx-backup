@@ -50,7 +50,7 @@ if ( isset( $_POST['fxbackup_contentcreate'] ) ) {
             echo '<div id="message" class="updated fade"><p>' . esc_html__( 'File backup successfully created!', 'fx-backup' ) . '</p></div>';
             if ( $download_url !== '' ) {
                 ?>
-                <p><a href="<?php echo esc_url( $download_url ); ?>"><?php _e( 'Click to download the archive!', 'fx-backup' ); ?></a></p>
+                <p><a href="<?php echo esc_url( $download_url ); ?>"><?php esc_html_e( 'Click to download the archive!', 'fx-backup' ); ?></a></p>
                 <?php
             }
         } else {
@@ -62,17 +62,22 @@ if ( isset( $_POST['fxbackup_contentcreate'] ) ) {
 
 <div id="poststuff">
     <div class="postbox">
-        <h3 class="hndle"><span><?php _e( 'Files Manager Actions', 'fx-backup' ); ?></span></h3>
+        <h3 class="hndle"><span><?php esc_html_e( 'Files Manager Actions', 'fx-backup' ); ?></span></h3>
         <div class="inside">
-            <p><?php _e( 'Create an archive of your full <code>wp-content</code> folder (excluding the backup directory), plus site root files such as <code>wp-config.php</code> and <code>index.php</code>. Archives are saved in your configured backup folder. Does not include <code>wp-admin</code>, <code>wp-includes</code>, or the database.', 'fx-backup' ); ?></p>
+            <p><?php
+            echo wp_kses(
+                __( 'Create an archive of your full <code>wp-content</code> folder (excluding the backup directory), plus site root files such as <code>wp-config.php</code> and <code>index.php</code>. Archives are saved in your configured backup folder. Does not include <code>wp-admin</code>, <code>wp-includes</code>, or the database.', 'fx-backup' ),
+                [ 'code' => [] ]
+            );
+            ?></p>
             <form method="post" action="">
                 <?php wp_nonce_field( 'fxbackup_files_backup' ); ?>
                 <p>
                     <input type="submit" name="fxbackup_contentcreate" class="button button-primary" value="<?php esc_attr_e( 'Generate archive now!', 'fx-backup' ); ?>"<?php echo $tar_available ? '' : ' disabled'; ?>>
-                    <label><?php _e( 'Use for migration or occasional file backup. Enable scheduled file backups on the main settings page.', 'fx-backup' ); ?></label>
+                    <label><?php esc_html_e( 'Use for migration or occasional file backup. Enable scheduled file backups on the main settings page.', 'fx-backup' ); ?></label>
                 </p>
             </form>
-            <p><?php _e( 'You need enough disk space or the archive may be incomplete.', 'fx-backup' ); ?></p>
+            <p><?php esc_html_e( 'You need enough disk space or the archive may be incomplete.', 'fx-backup' ); ?></p>
             <?php fxbackup_render_environment_badges(); ?>
         </div>
     </div>
